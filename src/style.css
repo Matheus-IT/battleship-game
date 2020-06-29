@@ -1,0 +1,63 @@
+* {
+  margin: 0px;
+  padding: 0px;
+}
+
+body {
+  background-color: black;
+}
+
+#board {
+  position: relative;
+  margin: auto;
+  width: 56%;
+}
+
+#board_img {
+  width: 100%;
+  margin: auto;
+}
+
+#messageArea {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  color: #56af13;
+  font-size: 3rem;
+}
+
+table {
+  position: absolute;
+  top: 4%;
+  left: 13%;
+  border-spacing: 0px;
+}
+
+td {
+  width: 82px;
+  height: 82px;
+}
+
+form {
+  position: absolute;
+  right: 8px;
+  top: 40%;
+  padding: 16px;
+  background-color: #56af13;
+}
+
+form input, button {
+  background-color: #98cf71;
+  border-color: #53af13;
+  font-size: 1rem;
+}
+
+.hit {
+  background: url("images/ship.png") no-repeat center center;
+}
+
+.miss {
+  background: url("images/miss.png") no-repeat center center;
+}
+
+/*# sourceMappingURL=style.css.map */
