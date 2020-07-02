@@ -7,52 +7,59 @@ const view = {
 	},
 	displayHit: function (location) {
 		var cell = document.getElementById(location);
+		cell.innerHTML = "";
 		cell.setAttribute("class", "hit");
 	},
 	displayMiss: function (location) {
 		var cell = document.getElementById(location);
+		cell.innerHTML = "";
 		cell.setAttribute("class", "miss");
 	}
 };
 
 const model = {
+	gameOver: false,
 	boardSize: 7, // 7 * 7
 	numShips: 3,
 	shipLength: 3,
-	shipsSunk: 0, // keeps the current num of ships that have been sunk
+	shipsSunk: 0,
 	ships: [
 		{ locations: [0, 0, 0], hits: ["", "", ""] },
 		{ locations: [0, 0, 0], hits: ["", "", ""] },
 		{ locations: [0, 0, 0], hits: ["", "", ""] }
 	],
 
-	fire: function (location) {
+	fire: function (guess_location) {
 		for (let c = 0; c < this.numShips; c++) {
 			let ship = this.ships[c];
-			let index = ship.locations.indexOf(location);
+			let index = ship.locations.indexOf(guess_location);
 
 			if (index >= 0) {
 				// we have a hit
 				ship.hits[index] = "hit";
-				view.displayHit(location);
-				view.displayMessage("Hit!");
+				view.displayHit(guess_location);
 				// evaluate if this ship was sunk
 				if (this.isSunk(ship)) {
 					view.displayMessage("You sank my battleship!");
 					this.shipsSunk++;
+				} else {
+					let rows = "ABCDEFG";
+					// parse guess_location from numeric to alpha-numeric
+					guess_location = rows[guess_location[0]] + guess_location[1];
+					view.displayMessage(`Hit at location ${guess_location}!`);
 				}
 				return true;
 			}
 		}
 		// if we don't have a hit
-		view.displayMiss(location);
+		view.displayMiss(guess_location);
 		view.displayMessage("You missed.");
 		return false;
 	},
 
 	isSunk: function (ship) {
 		for (let c = 0; c < this.shipLength; c++) {
-			if (ship.hits !== "hit") return false; // the ship is still floating
+			if (ship.hits[c] !== "hit") return false; // the ship is still floating
 		}
 		return true; // the ship is sunk
 	},
@@ -111,24 +118,41 @@ const model = {
 };
 
 const controller = {
-	guesses: 0,
+	numGuesses: 0,
 	locationsGuessed: [],
 
 	processGuess: function (cellId) { 
 		const location = cellId;
+		var alreadyGuessed = this.locationsGuessed;
 		
-		this.guesses++;
-		var hit = model.fire(location);
+		if (alreadyGuessed.indexOf(location) > -1) {
+			view.displayMessage("Hey you already played there!");
+		} else {
+			var hit = model.fire(location);
+			this.numGuesses++;
+			alreadyGuessed.push(location);
+		}
+		
 		// game over
-		if (hit && model.shipsSunk === model.numShips) {
-			view.displayMessage(`You sunk all my battleships in ${this.guesses} guesses.`);
+		if (hit && model.shipsSunk === model.numShips) {			
+			let messageArea = document.querySelector("#messageArea");
+			let restart_button = document.createElement("a");
+			
+			view.displayMessage(`<p>You sunk all my battleships in ${this.numGuesses} guesses.</p>`);
+			restart_button.setAttribute("class", "restart_button");
+			restart_button.innerHTML = "RESTART";
+			restart_button.setAttribute("href", "index.html");
+			messageArea.appendChild(restart_button);
+			model.gameOver = true;
 		}
 	}
 };
 
 function handleCellClick() {
-	const cellId = this.getAttribute("id");
-	controller.processGuess(cellId);
+	if (!model.gameOver) {
+		const cellId = this.getAttribute("id");
+		controller.processGuess(cellId);
+	}
 }
 
 function generateCells() {
@@ -146,7 +170,7 @@ function generateCells() {
 			column = 0;
 		}
 		cell.setAttribute("class", "cell");
-		cell.innerHTML = `${String.fromCharCode(letter)} ${column}`;
+		cell.innerHTML = `${String.fromCharCode(letter)}${column}`;
 		game_board.appendChild(cell);
 	}
 }
@@ -167,12 +191,12 @@ function setCellsIds(cells) {
 
 function init() {
 	generateCells();
-	model.generateShipLocations();
 	const cells = document.getElementsByClassName("cell");
 	setCellsIds(cells);
 	for (let cell of cells) {
 		cell.onclick = handleCellClick;
 	}
+	model.generateShipLocations();
 }
 
 window.onload = init();
