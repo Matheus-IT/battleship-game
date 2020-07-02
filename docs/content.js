@@ -26,15 +26,15 @@ const model = {
 		{ locations: [0, 0, 0], hits: ["", "", ""] }
 	],
 
-	fire: function (guess) {
+	fire: function (location) {
 		for (let c = 0; c < this.numShips; c++) {
 			let ship = this.ships[c];
-			let index = ship.locations.indexOf(guess);
+			let index = ship.locations.indexOf(location);
 
 			if (index >= 0) {
 				// we have a hit
 				ship.hits[index] = "hit";
-				view.displayHit(guess);
+				view.displayHit(location);
 				view.displayMessage("Hit!");
 				// evaluate if this ship was sunk
 				if (this.isSunk(ship)) {
@@ -45,7 +45,7 @@ const model = {
 			}
 		}
 		// if we don't have a hit
-		view.displayMiss(guess);
+		view.displayMiss(location);
 		view.displayMessage("You missed.");
 		return false;
 	},
@@ -64,12 +64,12 @@ const model = {
 
 		if (direction === 1) {
 			// generate a start location for a horizontal ship
-			row = Math.floor(Math.random() * this.boardSize); // 0 or 6
-			col = Math.floor(Math.random() * ((this.boardSize	- 3) + 1)); // 0 or 4
+			row = Math.floor(Math.random() * this.boardSize); // between 0 and 6
+			col = Math.floor(Math.random() * ((this.boardSize	- 3) + 1)); // between 0 and 4
 		} else {
 			// generate a start location for a vertical ship
-			row = Math.floor(Math.random() * ((this.boardSize	- 3) + 1)); // 0 or 4
-			col = Math.floor(Math.random() * this.boardSize); // 0 or 6
+			row = Math.floor(Math.random() * ((this.boardSize	- 3) + 1)); // between 0 and 4
+			col = Math.floor(Math.random() * this.boardSize); // between 0 and 6
 		}
 
 		var newShipLocations = [];
@@ -112,76 +112,67 @@ const model = {
 
 const controller = {
 	guesses: 0,
+	locationsGuessed: [],
 
-	processGuess: function (guess) { // takes an alpha-numeric guess
-		var location = parseGuess(guess);
-		if (location) {
-			this.guesses++;
-			var hit = model.fire(location);
-			// game over
-			if (hit && model.shipsSunk === model.numShips) {
-				view.displayMessage(`You sunk all my battleships in ${this.guesses} guesses.`);
-			}
+	processGuess: function (cellId) { 
+		const location = cellId;
+		
+		this.guesses++;
+		var hit = model.fire(location);
+		// game over
+		if (hit && model.shipsSunk === model.numShips) {
+			view.displayMessage(`You sunk all my battleships in ${this.guesses} guesses.`);
 		}
 	}
 };
 
-function parseGuess(guess) {
-	guess = guess.toUpperCase();
-	if (guess === null || guess.length !== 2) {
-		alert("oops, please enter a letter and a number on the board.");
-	} else {
-		var alphabet = "ABCDEFG";
-		var firstChar = guess[0];
-		var row = alphabet.indexOf(firstChar);
-		var column = guess[1];
+function handleCellClick() {
+	const cellId = this.getAttribute("id");
+	controller.processGuess(cellId);
+}
 
-		if (isNaN(row) || isNaN(column)) {
-			alert("oops, that isn't on the board.");
-		} else if (	row < 0 || row >= model.boardSize ||
-								column < 0 || column >= model.boardSize) {
-			alert("oops, that's off the board.");
-		} else {
-			// if everything looks good 
-			return row + column;
+function generateCells() {
+	const game_board = document.querySelector("#board");
+	var qtt_cells = 49;
+	var letter = 65;
+	var column = 0;
+	var iterations = 0;
+
+	for (let i = 0; i < qtt_cells; i++, iterations++, column++) {
+		let cell = document.createElement("button");
+		if (iterations === 7) {
+			letter++;
+			iterations = 0;
+			column = 0;
 		}
+		cell.setAttribute("class", "cell");
+		cell.innerHTML = `${String.fromCharCode(letter)} ${column}`;
+		game_board.appendChild(cell);
 	}
-	// if there's a fail when checking
-	return null;
 }
 
-function handleFireButton() {
-	var guessInput = document.querySelector("#guessInput");
-	var guess = guessInput.value;
+function setCellsIds(cells) {
+	var pos = 0;
+	const size = model.boardSize;
 
-	event.preventDefault();
-	controller.processGuess(guess);
-	guessInput.value = "";
-}
-
-function handleKeyPress(e) {
-	var fireButton = document.querySelector("#fireButton");
-
-	if (e.keyCode === 13) {
-		e.preventDefault();
-		fireButton.click();
+	for (let i = 0; i < size; i++) {
+		for (let j = 0; j < size; j++) {
+			let row = String(i);
+			let column = String(j);
+			cells[pos].setAttribute("id", (row + column));
+			pos++;
+		}
 	}
 }
 
 function init() {
-	var guessInput = document.querySelector("#guessInput");
-	var fireButton = document.querySelector("#fireButton");
-
+	generateCells();
 	model.generateShipLocations();
-	fireButton.onclick = handleFireButton;
-	guessInput.onkeypress = handleKeyPress;
-
-	/*
-	var dts = document.getElementsByTagName("td");
-	for (let dt of dts) {
-		console.log(dt.getAttribute("id"));
+	const cells = document.getElementsByClassName("cell");
+	setCellsIds(cells);
+	for (let cell of cells) {
+		cell.onclick = handleCellClick;
 	}
-	*/
 }
 
 window.onload = init();
