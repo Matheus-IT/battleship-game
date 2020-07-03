@@ -19,7 +19,7 @@ const view = {
 
 const model = {
 	gameOver: false,
-	boardSize: 7, // 7 * 7
+	boardSize: 6, // 6 * 6
 	numShips: 3,
 	shipLength: 3,
 	shipsSunk: 0,
@@ -43,7 +43,7 @@ const model = {
 					view.displayMessage("You sank my battleship!");
 					this.shipsSunk++;
 				} else {
-					let rows = "ABCDEFG";
+					let rows = "ABCDEF";
 					// parse guess_location from numeric to alpha-numeric
 					guess_location = rows[guess_location[0]] + guess_location[1];
 					view.displayMessage(`Hit at location ${guess_location}!`);
@@ -121,24 +121,40 @@ const controller = {
 	numGuesses: 0,
 	locationsGuessed: [],
 
-	processGuess: function (cellId) { 
+	processGuess: function (cellId) {
 		const location = cellId;
 		var alreadyGuessed = this.locationsGuessed;
-		
+
 		if (alreadyGuessed.indexOf(location) > -1) {
 			view.displayMessage("Hey you already played there!");
 		} else {
 			var hit = model.fire(location);
+			var chances_area = document.querySelector("#num_chances");
+
 			this.numGuesses++;
+			// game over
+			if (20 - this.numGuesses === 0) {
+				chances_area.innerHTML = "";
+				view.displayMessage("<p>Game over, you ran out of chances.</p>")
+				model.gameOver = true;
+			} else {
+				chances_area.innerHTML = `Now you have ${20 - this.numGuesses} chances.`;
+			}
+			if (model.shipsSunk === model.numShips) {
+				chances_area.innerHTML = "";
+				view.displayMessage(`<p>You sunk all my battleships in ${this.numGuesses} guesses.</p>`);
+				model.gameOver = true;
+			}
+
 			alreadyGuessed.push(location);
 		}
-		
+
 		// game over
-		if (hit && model.shipsSunk === model.numShips) {			
+		if (model.gameOver) {
 			let messageArea = document.querySelector("#messageArea");
 			let restart_button = document.createElement("a");
-			
-			view.displayMessage(`<p>You sunk all my battleships in ${this.numGuesses} guesses.</p>`);
+
+
 			restart_button.setAttribute("class", "restart_button");
 			restart_button.innerHTML = "RESTART";
 			restart_button.setAttribute("href", "index.html");
@@ -157,14 +173,15 @@ function handleCellClick() {
 
 function generateCells() {
 	const game_board = document.querySelector("#board");
-	var qtt_cells = 49;
+	var qtt_cells = model.boardSize * model.boardSize;
 	var letter = 65;
 	var column = 0;
 	var iterations = 0;
 
 	for (let i = 0; i < qtt_cells; i++, iterations++, column++) {
 		let cell = document.createElement("button");
-		if (iterations === 7) {
+		// if it's the last cell of the column
+		if (iterations === model.boardSize) {
 			letter++;
 			iterations = 0;
 			column = 0;
